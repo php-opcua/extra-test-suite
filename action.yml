@@ -1,5 +1,5 @@
 name: 'Extra OPC UA Test Suite'
-description: 'Starts pre-built OPC UA test servers not covered by uanetstandard-test-suite (open62541 with NodeManagement on :24840, room to grow).'
+'description': 'Starts OPC UA test servers not provided by uanetstandard-test-suite (open62541 + NodeManagement on :24840).'
 
 branding:
   icon: 'server'
