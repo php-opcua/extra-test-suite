@@ -1,0 +1,42 @@
+name: 'Extra OPC UA Test Suite'
+description: 'Starts pre-built OPC UA test servers not covered by uanetstandard-test-suite (open62541 with NodeManagement on :24840, room to grow).'
+
+branding:
+  icon: 'server'
+  color: 'blue'
+
+inputs:
+  image-tag:
+    description: 'Image tag to pull for every service in docker-compose.yml (e.g. v1.0.0, latest). All services share the same tag — the repo is versioned as a whole.'
+    required: false
+    default: 'latest'
+  startup-timeout:
+    description: 'Seconds to wait for each service TCP port to accept connections.'
+    required: false
+    default: '30'
+
+runs:
+  using: composite
+  steps:
+    - name: Pull + start test suite
+      shell: bash
+      env:
+        TAG: ${{ inputs.image-tag }}
+        COMPOSE_FILE: ${{ github.action_path }}/docker-compose.yml
+        COMPOSE_CI_FILE: ${{ github.action_path }}/docker-compose.ci.yml
+      run: |
+        docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" pull
+        docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" up -d
+
+        # open62541-nm — always on host :24840 (hardcoded, no override)
+        for i in $(seq 1 ${{ inputs.startup-timeout }}); do
+          if nc -z localhost 24840; then
+            echo "open62541-nm up after ${i}s on opc.tcp://localhost:24840"
+            exit 0
+          fi
+          sleep 1
+        done
+
+        echo "open62541-nm did not start within ${{ inputs.startup-timeout }}s" >&2
+        docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" logs || true
+        exit 1

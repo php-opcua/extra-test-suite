@@ -1,0 +1,11 @@
+# CI-only overrides. Merged on top of docker-compose.yml by the composite
+# action via `docker compose -f docker-compose.yml -f docker-compose.ci.yml up`.
+#
+# The base file uses `restart: unless-stopped` so a developer starts the
+# suite once and it survives reboots — the CI runner is ephemeral, so we
+# disable restart here to match the runner's lifecycle (any restart would
+# be meaningless on a VM that is about to be destroyed).
+
+services:
+  open62541-nm:
+    restart: "no"

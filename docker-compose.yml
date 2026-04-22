@@ -1,0 +1,26 @@
+# extra-test-suite — OPC UA test servers not covered by uanetstandard-test-suite.
+#
+# Runtime dual-mode:
+# - `docker compose up` when consumed via the composite action (`action.yml`):
+#   compose pulls each `image:` from GHCR, no build.
+# - `docker compose build` in the publish workflow (.github/workflows/publish.yml):
+#   compose builds each `build:` context and tags with the `image:` name so
+#   `docker compose push` uploads to GHCR.
+#
+# TAG is set to `v<semver>` by the publish workflow and defaults to `latest`
+# for consumers of the composite action.
+#
+# Adding a new server: create `./<service>/Dockerfile`, add a new `services:`
+# entry below, bump the minor version, tag, push.
+
+name: extra-test-suite
+
+services:
+  open62541-nm:
+    image: ghcr.io/php-opcua/extra-test-suite/open62541-nm:${TAG:-latest}
+    build:
+      context: ./open62541-nm
+    container_name: opcua-extra-nm
+    ports:
+      - "24840:4840"
+    restart: unless-stopped
