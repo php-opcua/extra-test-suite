@@ -18,7 +18,7 @@
 
 The **companion suite** to [`php-opcua/uanetstandard-test-suite`](https://github.com/php-opcua/uanetstandard-test-suite): pre-configured OPC UA servers for the **service sets and scenarios the UA-.NETStandard reference implementation does not cover**. Same shape (single `docker compose up`, GitHub Action, GHCR-published images), different ports, explicitly non-overlapping with the main suite.
 
-Today it ships **one** server — [open62541](https://github.com/open62541/open62541) with the NodeManagement service set enabled — because UA-.NETStandard does not implement `AddNodes` / `DeleteNodes` / `AddReferences` / `DeleteReferences` over the wire. The repository is structured around `docker-compose.yml` so **new servers drop in as new services** (Prosys Simulation Server, Eclipse Milo, node-opcua, …) without changing the action contract.
+Today it ships **two** servers — [open62541](https://github.com/open62541/open62541) with the NodeManagement service set enabled (because UA-.NETStandard does not implement `AddNodes` / `DeleteNodes` / `AddReferences` / `DeleteReferences` over the wire), and an open62541 build with all RSA security policies + Anonymous and Username/Password authentication (an open62541-backed mirror of `uanetstandard-test-suite` port 4843, useful when the .NET stack is not available or when you want to validate against a second implementation). The repository is structured around `docker-compose.yml` so **new servers drop in as new services** (Prosys Simulation Server, Eclipse Milo, node-opcua, …) without changing the action contract.
 
 > **Why a separate repo:** `uanetstandard-test-suite` is the OPC Foundation reference stack — accurate, thorough, and the right default for 90% of client testing. But every reference implementation has blind spots (NodeManagement is UA-.NETStandard's most visible one), and any CI that wants to cover those corners needs a second server. Keeping the "extras" in their own versioned suite avoids bloating the main one and lets each member of the family move at its own cadence.
 
@@ -27,8 +27,9 @@ Today it ships **one** server — [open62541](https://github.com/open62541/open6
 | Port | Service (compose name) | Upstream | What it tests |
 |---|---|---|---|
 | 24840 | `open62541-nm` | [open62541 v1.4.8](https://github.com/open62541/open62541) built with `UA_ENABLE_NODEMANAGEMENT=ON`, runtime `ci_server` | `AddNodes` / `DeleteNodes` / `AddReferences` / `DeleteReferences` over the wire, plus anonymous full-access AccessControl so the tests don't fight permissions |
+| 24841 | `open62541-all-security` | [open62541 v1.4.8](https://github.com/open62541/open62541) built with `UA_ENABLE_ENCRYPTION=OPENSSL`, custom example server | Mirror of `uanetstandard-test-suite` port 4843 (`opcua-all-security`): every RSA security policy the build supports, every security mode (`None`/`Sign`/`SignAndEncrypt`), Anonymous + Username/Password authentication. Credentials match the upstream suite (`admin`/`admin123`, `operator`/`operator123`, `viewer`/`viewer123`, `test`/`test`). Self-signed RSA-2048 server certificate generated on first boot. **Permissive test posture:** accepts any client certificate (no trust list check) and allows plain-text passwords over `SecurityPolicy#None` — mirrors `uanetstandard-test-suite` port 4845 (`opcua-auto-accept`) behaviour so test clients work without server-side pre-trust. |
 
-Port `24840` was picked to sit **well clear** of the `4840-4849` range `uanetstandard-test-suite` reserves. Future services will follow the same rule (no overlap with 4840-4849 or between each other).
+Ports `24840`/`24841` were picked to sit **well clear** of the `4840-4849` range `uanetstandard-test-suite` reserves. Future services will follow the same rule (no overlap with 4840-4849 or between each other).
 
 ## Fork It
 
@@ -53,7 +54,7 @@ If the single open62541 server covers your NodeManagement testing needs (as it d
 docker compose up -d
 ```
 
-That's it. The `open62541-nm` container is running on `opc.tcp://localhost:24840` with anonymous full-access AccessControl and all four NodeManagement services enabled.
+That's it. The `open62541-nm` container is running on `opc.tcp://localhost:24840` with anonymous full-access AccessControl and all four NodeManagement services enabled, and `open62541-all-security` is on `opc.tcp://localhost:24841` advertising every RSA policy with anonymous and username/password authentication.
 
 ```bash
 # Stop everything
@@ -66,11 +67,14 @@ docker compose down
 
 ```
 opc.tcp://localhost:24840       # open62541 — NodeManagement
+opc.tcp://localhost:24841       # open62541 — all RSA security policies + anonymous/userpass
 ```
 
 ## Certificates
 
-None at v1.0.0. All services ship without security to keep the surface minimal — if you need a certificate-auth variant for a specific server, add it as a separate service in the compose file (see [Fork It](#fork-it)).
+`open62541-nm` ships without security. `open62541-all-security` generates a self-signed RSA-2048 certificate on first boot (DER format, with a `subjectAltName URI:urn:open62541.server.application`) — the client must trust this certificate to use any `Sign` or `SignAndEncrypt` endpoint. The certificate lives in the container at `/certs/`; mount that path as a volume if you need it to persist across `docker compose down` cycles.
+
+If you need a certificate-auth variant or a specific cert lifecycle, add a dedicated service in the compose file (see [Fork It](#fork-it)).
 
 ## Use in CI/CD (GitHub Actions)
 

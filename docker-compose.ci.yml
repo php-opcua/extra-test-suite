@@ -9,3 +9,6 @@
 services:
   open62541-nm:
     restart: "no"
+
+  open62541-all-security:
+    restart: "no"

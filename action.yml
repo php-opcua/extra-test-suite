@@ -1,5 +1,5 @@
 name: 'Extra OPC UA Test Suite'
-'description': 'Starts OPC UA test servers not provided by uanetstandard-test-suite (open62541 + NodeManagement on :24840).'
+'description': 'Starts OPC UA test servers against open62541, not provided by uanetstandard-test-suitt.'
 
 branding:
   icon: 'server'
@@ -28,15 +28,25 @@ runs:
         docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" pull
         docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" up -d
 
-        # open62541-nm — always on host :24840 (hardcoded, no override)
-        for i in $(seq 1 ${{ inputs.startup-timeout }}); do
-          if nc -z localhost 24840; then
-            echo "open62541-nm up after ${i}s on opc.tcp://localhost:24840"
-            exit 0
-          fi
-          sleep 1
-        done
+        wait_port() {
+          name=$1
+          port=$2
+          for i in $(seq 1 ${{ inputs.startup-timeout }}); do
+            if nc -z localhost "$port"; then
+              echo "$name up after ${i}s on opc.tcp://localhost:$port"
+              return 0
+            fi
+            sleep 1
+          done
+          echo "$name did not start within ${{ inputs.startup-timeout }}s on :$port" >&2
+          return 1
+        }
 
-        echo "open62541-nm did not start within ${{ inputs.startup-timeout }}s" >&2
-        docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" logs || true
-        exit 1
+        rc=0
+        wait_port open62541-nm 24840 || rc=1
+        wait_port open62541-all-security 24841 || rc=1
+
+        if [ "$rc" -ne 0 ]; then
+          docker compose -f "$COMPOSE_FILE" -f "$COMPOSE_CI_FILE" logs || true
+          exit "$rc"
+        fi

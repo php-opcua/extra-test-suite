@@ -24,3 +24,12 @@ services:
     ports:
       - "24840:4840"
     restart: unless-stopped
+
+  open62541-all-security:
+    image: ghcr.io/php-opcua/extra-test-suite/open62541-all-security:${TAG:-latest}
+    build:
+      context: ./open62541-all-security
+    container_name: opcua-extra-all-security
+    ports:
+      - "24841:4840"
+    restart: unless-stopped

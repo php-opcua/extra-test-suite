@@ -1,6 +1,46 @@
 # Changelog
 
 
+## [v1.1.0] - 2026-05-12
+
+Second release. Adds a permissive open62541-based mirror of the
+`uanetstandard-test-suite` port 4843 (`opcua-all-security`) so the encryption
+and username/password authentication paths can be exercised without the
+UA-.NETStandard stack running, and so CI clients can validate every RSA
+security policy against a second implementation.
+
+### Added
+
+- **`open62541-all-security` service** — open62541 v1.4.8 built with
+  `UA_ENABLE_ENCRYPTION=OPENSSL` plus a small custom example
+  (`open62541-all-security/server.c` in the build context) that wires every
+  RSA security policy the build supports, every security mode
+  (`None`/`Sign`/`SignAndEncrypt`), Anonymous + Username/Password
+  authentication with the same four logins as `uanetstandard-test-suite`
+  (`admin`/`admin123`, `operator`/`operator123`, `viewer`/`viewer123`,
+  `test`/`test`). Host port `24841:4840`. Self-signed RSA-2048 server cert
+  generated on first boot by `entrypoint.sh` (DER, `subjectAltName`
+  `URI:urn:open62541.server.application`, `IP:127.0.0.1`, `DNS:localhost`).
+- **Permissive trust posture** for the new service: replaces the default
+  trust-list-based PKI with `UA_CertificateVerification_AcceptAll` on both
+  `secureChannelPKI` and `sessionPKI`, and sets `allowNonePolicyPassword =
+  true`. Mirrors `uanetstandard-test-suite` port 4845 (`opcua-auto-accept`)
+  behaviour: ephemeral client certificates and plain-text passwords on
+  `SecurityPolicy#None` are both accepted, no server-side pre-trust step
+  required. Documented in README as a test posture — do NOT lift the wiring
+  into a production server template.
+- **Composite action waits for both ports.** `action.yml` now polls
+  `24840` and `24841` in sequence and exits non-zero if either port fails to
+  accept TCP within `startup-timeout` seconds. The compose logs are dumped
+  to the runner on any failure (previously dumped only when the single
+  port-24840 check timed out).
+
+### Changed
+
+- Action `description` and README rewritten to reflect the now-two-server
+  inventory; the "single open62541 server" framing from v1.0.0 is gone. The
+  "Future services" rule about staying clear of `4840–4849` still holds.
+
 ## [v1.0.0] - initial release
 
 First public release. Extracted from `php-opcua/opcua-client` where the
