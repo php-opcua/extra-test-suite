@@ -68,7 +68,7 @@ Maximum ease for tests.
 | ---------------------------------------------------------- | ------------------ | --------------- |
 | Connect with a self-signed client cert                     | `Bad_CertificateUntrusted` | Accepted |
 | Connect with an expired client cert                        | `Bad_CertificateTimeInvalid` | Accepted (!!) |
-| Username/password over `None` (unencrypted)                | `Bad_IdentityTokenRejected` | Accepted |
+| Username/password over `None` (unencrypted)                | `Bad_SecurityPolicyRejected` or `Bad_SecurityChecksFailed` | Accepted |
 | Quick CI test without distributing client cert to server   | Painful            | One line        |
 
 The trade-off: **none** of these failure paths are testable on
@@ -114,8 +114,15 @@ for the trust-flow patterns.
 
 ## Persistent cert
 
-To keep the same server cert across `docker compose down/up`
-cycles, mount the `/certs` directory:
+The Dockerfile declares `VOLUME ["/certs"]`, so the cert
+directory is backed by an anonymous Docker volume out of the
+box. That volume survives `docker compose down && up`, so the
+cert is **stable across restarts** by default — `entrypoint.sh`
+reuses the existing files when present, only regenerating when
+`/certs/server.der` is missing.
+
+To make the storage location explicit (e.g. for inspection from
+the host or backup), bind-mount the directory:
 
 <!-- @code-block language="text" label="compose override" -->
 ```text
@@ -126,12 +133,10 @@ services:
 ```
 <!-- @endcode-block -->
 
-The `entrypoint.sh` reuses the existing cert if found, regenerates
-otherwise. With the volume mount, your test's fingerprint-pin
-stays valid across runs.
-
-Without the volume, every `docker compose down && up` cycle
-generates a new cert — fingerprint-pinning tests need re-pin.
+Your test's fingerprint-pin only needs re-pinning after
+`docker compose down -v` (which removes the anonymous volume) or
+after you explicitly delete the volume — at which point the next
+boot generates a fresh cert.
 
 ## What you can't test here
 

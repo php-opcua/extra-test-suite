@@ -198,9 +198,11 @@ docker compose down -v
 ```
 
 `-v` removes anonymous volumes — important because
-`open62541-all-security`'s `/certs` is in a named volume by
-default, and stale certs across runs can cause cache mismatches
-in your tests.
+`open62541-all-security`'s Dockerfile declares
+`VOLUME ["/certs"]`, which Docker backs with an **anonymous**
+volume by default. Without `-v` that volume (and the server
+cert in it) survives `down`, and stale fingerprints across runs
+can cause cache mismatches in your tests.
 
 ## Image freshness
 

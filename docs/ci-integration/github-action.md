@@ -113,13 +113,16 @@ whichever endpoint they need.
 ## Selecting a subset
 
 The action has no `services:` input — it always brings up
-**both**. To start only one:
+**both**. To start only one, skip the composite action entirely
+and call `docker compose` directly against a clone of the repo:
 
 <!-- @code-block language="text" label="single-service via direct compose" -->
 ```text
 - run: |
-    docker compose -f .uanetstandard-extras/docker-compose.yml \
-                   -f .uanetstandard-extras/docker-compose.ci.yml \
+    git clone --depth 1 --branch v1.1.0 \
+      https://github.com/php-opcua/extra-test-suite.git /tmp/extras
+    docker compose -f /tmp/extras/docker-compose.yml \
+                   -f /tmp/extras/docker-compose.ci.yml \
                    up -d open62541-nm
 ```
 <!-- @endcode-block -->

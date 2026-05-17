@@ -32,8 +32,9 @@ security policy supported by the open62541 build at the
 For ECC tests, use `uanetstandard-test-suite`'s
 `opcua-ecc-nist` (4848) or `opcua-ecc-brainpool` (4849).
 
-The exact count of advertised endpoints depends on the build —
-expect 6-10 valid `(policy, mode)` combinations.
+With the build flags in this repo, the count is **11** valid
+`(policy, mode)` combinations — see
+[Endpoint count](#endpoint-count) below for the breakdown.
 
 ## Modes
 
@@ -69,6 +70,17 @@ For every endpoint, the server advertises:
 
 This mirrors `uanetstandard-test-suite`'s `opcua-userpass` and
 `opcua-all-security` for the username path.
+
+> **UserName token's `securityPolicyUri`.** `server.c` passes a
+> single `userTokenPolicyUri` to `UA_AccessControl_default` —
+> the URI of the **last** entry in the server's policy array
+> (typically the strongest one, e.g. `Aes256_Sha256_RsaPss`).
+> Every endpoint therefore advertises a `UserName` token policy
+> whose `securityPolicyUri` is **that same single URI**, not one
+> per endpoint. A client sending a `UserNameIdentityToken` must
+> encrypt the password with that policy — except on the
+> `None / None` endpoint, where `allowNonePolicyPassword = true`
+> lets the password go through unencrypted.
 
 ## Endpoint count
 

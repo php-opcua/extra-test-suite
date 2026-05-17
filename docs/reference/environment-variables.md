@@ -51,11 +51,17 @@ The entrypoint script reads two:
 | Variable                  | Default                                | Effect                                          |
 | ------------------------- | -------------------------------------- | ----------------------------------------------- |
 | `CERT_DIR`                | `/certs`                                | Where the self-signed cert + key live           |
-| `OPCUA_APPLICATION_URI`   | `urn:open62541.server.application`     | URI baked into the server cert's `subjectAltName` |
+| `OPCUA_APPLICATION_URI`   | `urn:open62541.server.application`     | URI written into the server cert's `subjectAltName URI:` field at generation time. **Does not** change the server's runtime ApplicationUri. |
 
 If you change `OPCUA_APPLICATION_URI`, the regenerated cert
-carries the new URI. Useful if your client validates against a
-specific ApplicationUri.
+carries the new URI in its `subjectAltName`. **The server's
+ApplicationUri is unaffected** — it stays
+`urn:open62541.server.application` because that value is
+hard-coded by open62541's defaults and isn't wired to this env
+var. Useful only if your client validates the cert's SAN against
+a specific URI; clients that match the server's runtime
+ApplicationUri will see the open62541 default regardless of
+what you set here.
 
 To change either, override in the compose file:
 

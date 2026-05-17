@@ -38,46 +38,60 @@ Any client can connect with one line:
 
 <!-- @code-block language="bash" label="opcua-cli probe" -->
 ```bash
-opcua-cli browse opc.tcp://localhost:24840 ns=0;i=85
+opcua-cli browse opc.tcp://localhost:24840 "ns=0;i=85"
+# or, since i=85 (Objects) is the default browse target:
+opcua-cli browse opc.tcp://localhost:24840
 ```
 <!-- @endcode-block -->
+
+Quote the NodeId — the `;` would otherwise be interpreted as a
+shell command separator.
 
 You should see the standard `Objects` folder's children. The
 address space is whatever open62541's `ci_server` example ships
 — mostly empty by design. **Tests populate it themselves** via
 `AddNodes`.
 
-A minimal AddNodes round-trip:
+A minimal AddNodes round-trip using
+[`php-opcua/opcua-client`](https://github.com/php-opcua/opcua-client):
 
 <!-- @code-block language="php" label="addnodes round-trip" -->
 ```php
-use PhpOpcua\Client\OpcuaClient;
-use PhpOpcua\Client\Types\NodeId;
+use PhpOpcua\Client\ClientBuilder;
+use PhpOpcua\Client\Types\NodeClass;
 
-$client = new OpcuaClient('opc.tcp://localhost:24840');
-$client->connect();
+$client = ClientBuilder::create()
+    ->connect('opc.tcp://localhost:24840');
 
-// AddNodes
-$result = $client->addNodes([
+// AddNodes — create a folder under Objects.
+$results = $client->addNodes([
     [
-        'parentNodeId'    => 'ns=0;i=85',           // Objects
-        'referenceTypeId' => 'ns=0;i=35',           // Organizes
+        'parentNodeId'       => 'i=85',                 // Objects
+        'referenceTypeId'    => 'i=35',                 // Organizes
         'requestedNewNodeId' => 'ns=1;s=my-folder',
-        'browseName'      => '1:MyFolder',
-        'nodeClass'       => 'Object',
+        'browseName'         => '1:MyFolder',
+        'nodeClass'          => NodeClass::Object,
+        'attributes'         => ['displayName' => 'MyFolder'],
+        'typeDefinition'     => 'i=61',                 // FolderType
     ],
 ]);
 
-// Browse confirms it exists
-$children = $client->browse('ns=0;i=85');
-// → contains "MyFolder"
+// Browse confirms it exists.
+foreach ($client->browse('i=85') as $ref) {
+    echo "  • {$ref->displayName->text}  ({$ref->nodeId})\n";
+}
 
-// DeleteNodes
-$client->deleteNodes(['ns=1;s=my-folder']);
+// DeleteNodes — clean up.
+$client->deleteNodes([
+    ['nodeId' => 'ns=1;s=my-folder', 'deleteTargetReferences' => true],
+]);
 
 $client->disconnect();
 ```
 <!-- @endcode-block -->
+
+See [`opcua-client` Managing nodes](https://github.com/php-opcua/opcua-client/blob/master/docs/operations/managing-nodes.md)
+for the full attribute shape and error handling.
 
 See [NodeManagement · Services reference](../nodemanagement/services-reference.md)
 for the full API.
@@ -125,9 +139,9 @@ needs to pin its fingerprint (TOFU) or use auto-accept mode. See
 
 | Try                                              | Expected                    |
 | ------------------------------------------------ | --------------------------- |
-| Wrong password                                    | `Bad_IdentityTokenRejected`  |
-| Unknown user                                      | `Bad_IdentityTokenRejected`  |
-| Anonymous on a non-None endpoint                  | Server's choice (typically rejected if disabled) |
+| Wrong password                                    | `Bad_UserAccessDenied`       |
+| Unknown user                                      | `Bad_UserAccessDenied`       |
+| Anonymous on an endpoint that doesn't allow it    | `Bad_IdentityTokenRejected`  |
 
 ## Discover endpoints
 
@@ -141,7 +155,8 @@ opcua-cli get-endpoints opc.tcp://localhost:24841
 ```
 <!-- @endcode-block -->
 
-Expect 6+ endpoints. For the policy matrix, see
+Expect **11** endpoints — one per `(policy, mode)` combination.
+For the policy matrix, see
 [Policies and modes](../security-and-auth/policies-and-modes.md).
 
 ## Stop

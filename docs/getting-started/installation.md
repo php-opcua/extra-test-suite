@@ -32,6 +32,12 @@ dual pattern. Two modes:
 | **Pull from GHCR**    | Default. Fast (~5 s once images cached). For users.    | `docker compose pull && docker compose up -d` |
 | **Build from source** | Fork / dev. Compiles open62541 (~3-5 min cold).        | `docker compose up -d --build` |
 
+Without an explicit flag, `docker compose up -d` will **pull**
+the `image:` from GHCR if it isn't already in your local Docker
+cache, and only fall back to `build:` when neither the cache nor
+the registry has a copy. Pass `--build` to force a rebuild from
+the local `Dockerfile` regardless.
+
 ## Pull-from-GHCR (recommended)
 
 <!-- @code-block language="bash" label="terminal — pull mode" -->
@@ -101,21 +107,38 @@ If a port doesn't answer, see
 
 The `open62541-all-security` service generates a self-signed
 RSA-2048 certificate on first boot at `/certs/server.der` +
-`/certs/server.key.der` **inside the container**. To persist it
-across `docker compose down`, mount a volume:
+`/certs/server.key.der` **inside the container**. The Dockerfile
+declares `VOLUME ["/certs"]`, so Docker attaches an **anonymous
+volume** at that path the first time the container starts. That
+anonymous volume **survives** a plain `docker compose down` and
+gets reattached on the next `docker compose up`, which means
+`entrypoint.sh` finds the existing cert and reuses it (see the
+`if [ ! -f "$CERT_FILE" ]` guard there).
+
+To pin the cert path explicitly (so you can inspect or share
+it from the host), mount your own volume on top. Paths are
+relative to the directory containing your `docker-compose.yml`
+(typically the repo root, e.g. `extra-test-suite/`):
 
 <!-- @code-block language="text" label="compose override (optional)" -->
 ```text
 services:
   open62541-all-security:
     volumes:
-      - ./certs-extra:/certs
+      - ./certs-extra:/certs       # resolves to <repo>/certs-extra
 ```
 <!-- @endcode-block -->
 
-Without the override, every `docker compose down && up` cycle
-regenerates the cert. Tests that pin the cert's fingerprint need
-the volume mount.
+The cert is **only** regenerated when:
+
+- The container starts and `/certs/server.der` doesn't exist
+  (first boot, or after wiping the volume).
+- You ran `docker compose down -v` — `-v` removes the anonymous
+  volume, so the next `up` starts from an empty `/certs`.
+
+A plain `docker compose down && docker compose up -d` keeps the
+existing cert; only `down -v` (or explicitly deleting the
+volume) regenerates it.
 
 `open62541-nm` runs without security and doesn't generate any
 certs.

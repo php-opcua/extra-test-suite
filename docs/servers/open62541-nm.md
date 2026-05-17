@@ -43,12 +43,18 @@ one reason.
 ## What's in the address space
 
 Almost nothing. The server boots open62541's `ci_server` example
-which provides:
+which is **expected to** provide:
 
 - Standard `Objects`, `Server`, `Types` folders (from
   `UA_NAMESPACE_ZERO=FULL`)
 - Empty `ns=1` namespace (`urn:open62541.server.application`)
   ready for your tests to add to
+
+(The address-space layout and access-control behaviour described
+in this page reflect upstream's `examples/ci_server.c` at the
+pinned tag. This repo does not carry that source — confirm
+against the upstream example if a test depends on a specific
+detail.)
 
 **Your tests populate it.** A test typically:
 
@@ -88,8 +94,13 @@ tutorial_server_firststeps → server → tutorial_server_variable
 
 The first one that exists in the build is executed. This keeps
 the image working if upstream open62541 renames or removes an
-example. As of v1.4.8, `ci_server` is the chosen binary —
-the most permissive of the upstream examples.
+example. As of v1.4.8, `ci_server` is the binary picked up by
+this fallback chain — chosen because it is, to the best of our
+knowledge, the most permissive of the upstream `examples/*`
+binaries. The exact behaviour (anonymous full access, empty
+address space, no username/password) reflects what upstream
+ships in `examples/ci_server.c` at that tag; verify against the
+upstream source if you depend on a specific detail.
 
 ## CMake build flags
 

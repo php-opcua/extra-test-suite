@@ -74,7 +74,7 @@ Implications:
 | Test                                                | uanetstandard-test-suite | extra-test-suite     |
 | --------------------------------------------------- | ------------------------ | -------------------- |
 | Valid credentials → session created                  | ✓                        | ✓                    |
-| Wrong password → `Bad_IdentityTokenRejected`         | ✓                        | ✓                    |
+| Wrong password → `Bad_UserAccessDenied`              | ✓                        | ✓                    |
 | `viewer` writes `OperatorLevel` → `Bad_UserAccessDenied` | ✓ (enforced)         | ❌ (write succeeds)   |
 | `viewer` reads any variable                          | ✓                        | ✓                    |
 
@@ -111,15 +111,21 @@ Repeat for the other three users — all succeed.
 
 ```text
 connect(..., identity=UserName("admin", "wrong"))
-→ Bad_IdentityTokenRejected
+→ Bad_UserAccessDenied
 ```
 
 ### Unknown user
 
 ```text
 connect(..., identity=UserName("alice", "anything"))
-→ Bad_IdentityTokenRejected
+→ Bad_UserAccessDenied
 ```
+
+open62541's `UA_AccessControl_default` returns
+`Bad_UserAccessDenied` for any credential mismatch.
+`Bad_IdentityTokenRejected` is reserved for the "wrong token
+type" case (e.g. sending Anonymous to a server that requires
+UserName).
 
 ### Plain-text password over `None`
 
@@ -129,8 +135,11 @@ connect(opc.tcp://localhost:24841, policy=None, mode=None,
 → Good  (because allowNonePolicyPassword = true)
 ```
 
-On a stricter server this combination fails — `Bad_IdentityTokenRejected`
-or `Bad_SecurityChecksFailed`. The permissive posture lets it
+On a stricter server this combination fails —
+`Bad_SecurityPolicyRejected` or `Bad_SecurityChecksFailed`
+(the rejection happens at the transport layer because the
+password isn't encrypted with the server's public key). The
+permissive `allowNonePolicyPassword = true` posture lets it
 through here.
 
 ## Compatibility with the main suite
@@ -138,10 +147,14 @@ through here.
 Your test code can target either:
 
 ```text
-opc.tcp://localhost:24841/UA/TestServer   # extra-test-suite
+opc.tcp://localhost:24841                 # extra-test-suite (bare URL — no resource path)
 opc.tcp://localhost:4841/UA/TestServer    # uanetstandard-test-suite userpass
 opc.tcp://localhost:4843/UA/TestServer    # uanetstandard-test-suite all-security
 ```
+
+Note that this suite's open62541 servers serve at the **bare**
+URL (no `/UA/TestServer` path) — see
+[Ports and endpoints](../reference/ports-and-endpoints.md#endpoint-urls-from-the-host).
 
 …with the **same credentials**. The wire interactions are
 identical for the username/password path. Differences:

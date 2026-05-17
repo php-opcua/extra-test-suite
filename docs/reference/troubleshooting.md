@@ -19,7 +19,7 @@ next: { label: 'Top of docs',            href: '../index.md' }
 
 | Symptom                                            | Cause / fix                                          |
 | -------------------------------------------------- | ---------------------------------------------------- |
-| `Error response from daemon: Conflict. The container name "opcua-extra-nm" is already in use` | A previous `docker compose down` was incomplete. Run `docker rm -f opcua-extra-nm opcua-extra-all-security`. |
+| `Error response from daemon: Conflict.` … `container name "/opcua-extra-nm" is already in use by container "<id>"` | A previous `docker compose down` was incomplete. Run `docker rm -f opcua-extra-nm opcua-extra-all-security`. |
 | `Error response from daemon: Ports are not available` | Another process on the host is using 24840 or 24841. `lsof -i :24840` to find it. |
 | `pull access denied`                                | Image tag doesn't exist. Check `:latest` or `:v1.1.0` is published on GHCR. |
 | `failed to solve: failed to compute cache key`       | `docker compose build` cache issue. Run with `--no-cache`. |
@@ -71,13 +71,23 @@ The server's cert isn't in your client's trust store.
 | Auto-accept on the client side             | Configure your client to accept any server cert. Test-only. |
 | Pre-stage the cert in client trust store  | Copy `/certs/server.der` out of the container, add to client's trust dir. |
 
-### `Bad_IdentityTokenRejected` with correct password
+### `Bad_IdentityTokenRejected` or `Bad_UserAccessDenied` on connect
 
-| Cause                                                       | Fix                              |
-| ----------------------------------------------------------- | -------------------------------- |
-| Connecting to `open62541-nm` with username (it doesn't support it) | Use `open62541-all-security` (24841) |
-| Wrong username (case-sensitive)                              | The four logins are case-sensitive |
-| Plain-text password on a stricter server                     | Not applicable — this suite allows it |
+open62541's default access-control plugin uses **two distinct**
+status codes:
+
+- `Bad_IdentityTokenRejected` — the **token type** is wrong for
+  the endpoint (e.g. sending Anonymous to a server that requires
+  UserName).
+- `Bad_UserAccessDenied` — the token type matches but the
+  credentials are invalid (wrong username or password).
+
+| Cause                                                       | Status                          | Fix                              |
+| ----------------------------------------------------------- | ------------------------------- | -------------------------------- |
+| Connecting to `open62541-nm` with username (it doesn't support it) | `Bad_IdentityTokenRejected` | Use `open62541-all-security` (24841) |
+| Wrong username (case-sensitive)                              | `Bad_UserAccessDenied`           | The four logins are case-sensitive |
+| Wrong password for a known user                              | `Bad_UserAccessDenied`           | Double-check the credential table in [User accounts](../security-and-auth/user-accounts.md) |
+| Plain-text password on a stricter server                     | `Bad_IdentityTokenRejected` or `Bad_SecurityChecksFailed` | Not applicable here — this suite sets `allowNonePolicyPassword = true` |
 
 ## NodeManagement
 
@@ -138,8 +148,15 @@ For tests that need persistent state, structure them so they:
 
 ### Server certificate changes after restart
 
-Same — `open62541-all-security` regenerates the cert if `/certs`
-isn't a volume. Mount it:
+By default this **doesn't** happen — the Dockerfile declares
+`VOLUME ["/certs"]`, so Docker keeps an anonymous volume mounted
+there across `docker compose down && up` and `entrypoint.sh`
+reuses the existing cert. The cert only changes after
+`docker compose down -v` (which wipes the anonymous volume) or
+if you manually delete the volume.
+
+If you want the cert files on the host (for inspection or
+backup), bind-mount the directory:
 
 <!-- @code-block language="text" label="compose override" -->
 ```text
@@ -150,8 +167,9 @@ services:
 ```
 <!-- @endcode-block -->
 
-…and the cert persists. Your client's fingerprint pin stays
-valid.
+…and the cert lives under `./certs-extra/` on the host. Your
+client's fingerprint pin stays valid across restarts in both
+configurations.
 
 ## CI
 

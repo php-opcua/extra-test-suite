@@ -39,12 +39,15 @@ whatever extra files it needs.
 
 ## Step 1 — Create the service directory
 
+From the root of your forked `extra-test-suite/` checkout:
+
 ```text
 mkdir my-new-server
+cd my-new-server
 ```
 
-Inside, write a `Dockerfile`. The two existing ones are
-templates:
+Inside that directory, write a `Dockerfile`. The two existing
+ones are templates:
 
 | Source you want to base on              | Look at                           |
 | --------------------------------------- | --------------------------------- |
@@ -91,6 +94,14 @@ CMD ["/usr/local/bin/myserver"]
 ```
 <!-- @endcode-block -->
 
+The two existing Dockerfiles in this repo don't follow this
+shape exactly — they `COPY --from=build /src/build/bin/examples/<binary>`
+because open62541's CMake build drops example binaries there.
+If you're forking from one of those Dockerfiles, either move
+your binary to `/usr/local/bin/` during the build stage so the
+runtime `COPY` above works, or change the runtime `COPY` source
+path to wherever your build stage actually produces the binary.
+
 ## Step 2 — Add the service to `docker-compose.yml`
 
 Pick a host port that **doesn't** conflict with anything already
@@ -130,10 +141,15 @@ services:
 
 The `image:` + `build:` dual pattern means:
 
-- `docker compose up -d` in local dev → **builds** from the
-  Dockerfile.
+- `docker compose up -d --build` in local dev → **builds** from
+  the Dockerfile (force).
 - `docker compose pull && docker compose up -d` in CI → **pulls**
   from GHCR.
+- Plain `docker compose up -d` (no flag) prefers the `image:` if
+  it's available locally or in the registry, and only falls back
+  to `build:` when neither has a copy — so pass `--build`
+  explicitly when you want to test your local Dockerfile
+  changes.
 
 ## Step 3 — Add to `docker-compose.ci.yml`
 
@@ -189,10 +205,9 @@ git push origin v1.2.0
 
 The publish workflow runs on `v*` tag push:
 
-1. `docker compose build` (tags every service with
-   `:v1.2.0`).
-2. `docker compose push` (uploads to GHCR).
-3. Re-tags and pushes each image as `:latest`.
+1. `docker compose build --push` — builds every service tagged
+   with `:v1.2.0` and uploads them to GHCR in one step.
+2. Re-tags and pushes each image as `:latest`.
 
 Both your existing services and the new one get published in
 one workflow run — no per-service workflow changes needed.

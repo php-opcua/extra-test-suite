@@ -91,7 +91,7 @@ references).
 
 | Service                  | Binary                       | How it starts                                  |
 | ------------------------ | ----------------------------- | ---------------------------------------------- |
-| `open62541-nm`            | `ci_server` (upstream example) | Direct `exec` — fallback chain if renamed       |
+| `open62541-nm`            | `ci_server` (upstream example) | `sh -c` dispatch script — iterates a fallback chain and `exec`s the first binary that exists |
 | `open62541-all-security`  | `all_security_server` (custom — `server.c`) | Via `entrypoint.sh` that generates a cert |
 
 For `open62541-nm`, the entrypoint searches for a recognised

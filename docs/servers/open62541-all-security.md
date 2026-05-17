@@ -120,10 +120,15 @@ Stored inside the container at:
 
 Both **DER** format (not PEM) — open62541's convention.
 
-The certificate is generated fresh every container start unless
-`/certs` is mounted as a volume.
+The Dockerfile declares `VOLUME ["/certs"]`, so the directory
+is backed by an anonymous Docker volume by default. That volume
+persists across `docker compose down && up`, so the cert is
+**generated once** on first boot and **reused** on every
+subsequent restart — `entrypoint.sh` only regenerates when
+`/certs/server.der` is missing.
 
-To persist across `docker compose down`:
+To override the storage location (or share the cert with the
+host), mount your own volume on top:
 
 <!-- @code-block language="text" label="compose override" -->
 ```text
@@ -134,8 +139,10 @@ services:
 ```
 <!-- @endcode-block -->
 
-Without the override, your tests need to **re-pin the
-fingerprint** every time the container restarts.
+Your tests need to **re-pin the fingerprint** only after
+`docker compose down -v` (or after explicitly deleting the
+anonymous volume) — `-v` is what clears `/certs` and forces a
+fresh cert on the next boot.
 
 ## How `server.c` works
 
@@ -167,7 +174,11 @@ Look for the startup line:
 ```
 
 `N` is the number of policy+mode combinations open62541
-advertises. Typically 6-10 depending on build options.
+advertises. With the build flags in this repo
+(`UA_ENABLE_ENCRYPTION=OPENSSL`, no policy explicitly disabled),
+the count is **11** — see
+[Policies and modes · Endpoint count](../security-and-auth/policies-and-modes.md#endpoint-count)
+for the breakdown.
 
 ## CMake build flags
 
@@ -177,9 +188,13 @@ Same as `open62541-nm` plus:
 -DUA_ENABLE_ENCRYPTION=OPENSSL
 ```
 
-This enables every RSA policy in open62541 that's currently
-implemented (`Basic128Rsa15`, `Basic256`, `Basic256Sha256`,
-`Aes128_Sha256_RsaOaep`, `Aes256_Sha256_RsaPss`).
+This enables the RSA policies that open62541 v1.4.8 exposes via
+its `UA_ServerConfig_setDefaultWithSecurityPolicies` convenience
+wrapper when built against OpenSSL — currently
+`Basic128Rsa15`, `Basic256`, `Basic256Sha256`,
+`Aes128_Sha256_RsaOaep`, and `Aes256_Sha256_RsaPss`. The exact
+list reflects what upstream open62541 ships behind that wrapper
+at the pinned version, not a hand-picked subset in this repo.
 
 ECC policies are **not** supported by open62541 at the time of
 v1.4.8 in this configuration — for ECC tests, use

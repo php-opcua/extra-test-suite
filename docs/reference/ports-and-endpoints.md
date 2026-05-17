@@ -89,13 +89,20 @@ servers, no port conflicts.
 
 | Service                    | ApplicationUri                              |
 | -------------------------- | ------------------------------------------- |
-| `open62541-nm`              | `urn:open62541.server.application` (default) |
-| `open62541-all-security`    | `urn:open62541.server.application` (also default) |
+| `open62541-nm`              | `urn:open62541.server.application` (open62541 default) |
+| `open62541-all-security`    | `urn:open62541.server.application` (open62541 default) |
 
-Both inherit open62541's default. Different from
+Both inherit open62541's hard-coded default. Different from
 `uanetstandard-test-suite` (which uses
 `urn:opcua:testserver:nodes`). If your client trusts by
 ApplicationUri, you need separate entries for each suite.
+
+> **Note:** the `OPCUA_APPLICATION_URI` env var on
+> `open62541-all-security` only changes the **server cert's
+> `subjectAltName URI:`** — it does **not** change the
+> ApplicationUri the running server reports, because that value
+> is baked into the open62541 build. See
+> [Environment variables](./environment-variables.md#open62541-all-security).
 
 ## NodeId conventions
 
@@ -135,7 +142,9 @@ opcua-cli get-endpoints opc.tcp://localhost:24840
 <!-- @endcode-block -->
 
 Should return at least one EndpointDescription (the `None/None`
-endpoint for `open62541-nm`, 6+ for `all-security`).
+endpoint for `open62541-nm`, **11** for `all-security` — one per
+`(policy, mode)` combination; see
+[Policies and modes · Endpoint count](../security-and-auth/policies-and-modes.md#endpoint-count)).
 
 ## Where to read next
 

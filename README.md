@@ -84,7 +84,7 @@ This repository is also a **reusable GitHub Action**. Add a single step to your 
 steps:
   - uses: actions/checkout@v4
 
-  - uses: php-opcua/extra-test-suite@v1.0.0
+  - uses: php-opcua/extra-test-suite@v1.1.0
 
   - run: vendor/bin/pest --group=integration  # or the equivalent in your stack
 ```
@@ -94,9 +94,9 @@ The composite action runs `docker compose pull && docker compose up -d` with a C
 Pin the version for reproducibility:
 
 ```yaml
-- uses: php-opcua/extra-test-suite@v1.0.0
+- uses: php-opcua/extra-test-suite@v1.1.0
   with:
-    image-tag: v1.0.0          # pull this exact image from GHCR
+    image-tag: v1.1.0          # pull this exact image from GHCR
     startup-timeout: '30'       # seconds, per-service TCP wait
 ```
 
@@ -108,7 +108,7 @@ For a real-world example, see the `integration` job in [`php-opcua/opcua-client`
 # First time: build from source (no published image yet)
 docker compose up -d --build
 
-# After v1.0.0 is published to GHCR — faster, no local compilation
+# After v1.1.0 is published to GHCR — faster, no local compilation
 docker compose pull
 docker compose up -d
 
