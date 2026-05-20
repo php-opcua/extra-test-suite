@@ -1,6 +1,16 @@
 # Changelog
 
 
+## [v1.2.0] - 2026-05-20
+
+Third release. Adds an open62541-based server with HistoryRead + HistoryUpdate enabled, used by `php-opcua/opcua-client` to exercise the HistoryUpdate service end-to-end (UA-.NETStandard does not implement it on its demo nodes).
+
+### Added
+
+- **`open62541-historizing` service** — open62541 v1.4.8 built with `UA_ENABLE_HISTORIZING=ON`, hosting a single `Double` variable `ns=2;s=Historizing.Counter` with `accessLevel` including `HISTORYREAD | HISTORYWRITE` and a `UA_HistoryDataBackend_Memory` (capacity 1024). Host port `24842:4840`. No security, anonymous only.
+- The exposed node accepts `HistoryInsertData`, `HistoryReplaceData`, `HistoryUpdateData`, `HistoryDeleteRawModified`, `HistoryReadRaw`. `HistoryDeleteAtTime` and the Event subtypes are accepted (no protocol error) but the Memory backend does not implement the actual delete/event paths.
+
+
 ## [v1.1.0] - 2026-05-12
 
 Second release. Adds a permissive open62541-based mirror of the

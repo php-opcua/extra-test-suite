@@ -106,7 +106,7 @@ this suite hard-codes:
 | Behaviour                         | Where it's set                                 |
 | --------------------------------- | ---------------------------------------------- |
 | Internal port (4840)              | `EXPOSE` in Dockerfile                          |
-| Host port mapping (24840/24841)   | `ports:` in `docker-compose.yml`                |
+| Host port mapping (24840/24841/24842) | `ports:` in `docker-compose.yml`           |
 | Security policies offered          | open62541's `setDefaultWithSecurityPolicies()` |
 | Security modes offered             | Same                                            |
 | User accounts                      | Hard-coded array in `server.c`                 |

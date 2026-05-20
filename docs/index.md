@@ -8,6 +8,7 @@
   - [Overview](./servers/overview.md)
   - [open62541-nm](./servers/open62541-nm.md)
   - [open62541-all-security](./servers/open62541-all-security.md)
+  - [open62541-historizing](./servers/open62541-historizing.md)
 - NodeManagement
   - [Overview](./nodemanagement/overview.md)
   - [Services reference](./nodemanagement/services-reference.md)

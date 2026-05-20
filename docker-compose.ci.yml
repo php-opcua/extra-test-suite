@@ -12,3 +12,6 @@ services:
 
   open62541-all-security:
     restart: "no"
+
+  open62541-historizing:
+    restart: "no"

@@ -18,6 +18,7 @@ next: { label: 'Environment variables',       href: './environment-variables.md'
 | -------------------------- | ------------------------------------- | --------- |
 | `open62541-nm`              | `opc.tcp://localhost:24840`            | TCP       |
 | `open62541-all-security`    | `opc.tcp://localhost:24841`            | TCP       |
+| `open62541-historizing`     | `opc.tcp://localhost:24842`            | TCP       |
 
 Neither endpoint uses a **resource path** — open62541 servers
 serve at the bare URL. Compare with `uanetstandard-test-suite`
@@ -27,31 +28,34 @@ which uses `/UA/TestServer` on every endpoint.
 
 For another container on the same compose network:
 
-| Service                    | Internal URL                                  |
-| -------------------------- | --------------------------------------------- |
-| `open62541-nm`              | `opc.tcp://open62541-nm:4840` (service name)  |
-| `open62541-all-security`    | `opc.tcp://open62541-all-security:4840`        |
+| Service                    | Internal URL                                       |
+| -------------------------- | -------------------------------------------------- |
+| `open62541-nm`              | `opc.tcp://open62541-nm:4840` (service name)       |
+| `open62541-all-security`    | `opc.tcp://open62541-all-security:4840`             |
+| `open62541-historizing`     | `opc.tcp://open62541-historizing:4840`              |
 
 The container-internal port is **always 4840**. The host
-mapping (`24840`, `24841`) is just for outside access.
+mapping (`24840`, `24841`, `24842`) is just for outside access.
 
 ## Ports
 
 Mapped on the host:
 
-| Port  | Protocol | Service                  |
-| ----- | -------- | ------------------------ |
-| 24840 | TCP      | `open62541-nm`            |
-| 24841 | TCP      | `open62541-all-security`  |
+| Port  | Protocol | Service                   |
+| ----- | -------- | ------------------------- |
+| 24840 | TCP      | `open62541-nm`             |
+| 24841 | TCP      | `open62541-all-security`   |
+| 24842 | TCP      | `open62541-historizing`    |
 
 ## Container names
 
 Set explicitly in `docker-compose.yml`:
 
-| Container name              | Service                  |
-| --------------------------- | ------------------------ |
-| `opcua-extra-nm`             | `open62541-nm`            |
-| `opcua-extra-all-security`   | `open62541-all-security`  |
+| Container name              | Service                   |
+| --------------------------- | ------------------------- |
+| `opcua-extra-nm`             | `open62541-nm`             |
+| `opcua-extra-all-security`   | `open62541-all-security`   |
+| `opcua-extra-historizing`    | `open62541-historizing`    |
 
 Useful when you need to `docker exec` or `docker logs` against a
 specific container.
@@ -62,6 +66,7 @@ specific container.
 | ---------------------------------------------------------------- | -------------------------- |
 | `ghcr.io/php-opcua/extra-test-suite/open62541-nm`                | `open62541-nm`              |
 | `ghcr.io/php-opcua/extra-test-suite/open62541-all-security`      | `open62541-all-security`    |
+| `ghcr.io/php-opcua/extra-test-suite/open62541-historizing`       | `open62541-historizing`     |
 
 Tagged with both `:vX.Y.Z` (immutable) and `:latest` (the most
 recent stable).
@@ -69,7 +74,7 @@ recent stable).
 ## Port-allocation rule
 
 This suite reserves **24840-24849** for its own services. New
-services pick from `24842` onward, avoiding the **4840-4849**
+services pick from `24843` onward, avoiding the **4840-4849**
 range that `uanetstandard-test-suite` owns, plus its `4851` (SKS)
 and `14850` (PubSub).
 
@@ -82,15 +87,16 @@ Combined contract across both suites:
 | 14850 (UDP)  | `uanetstandard-test-suite` — PubSub publisher (via relay)   |
 | 24840-24849  | `extra-test-suite` — open62541-based extras                  |
 
-A client that runs both suites simultaneously sees 12 OPC UA
+A client that runs both suites simultaneously sees 13 OPC UA
 servers, no port conflicts.
 
 ## Application URIs
 
-| Service                    | ApplicationUri                              |
-| -------------------------- | ------------------------------------------- |
-| `open62541-nm`              | `urn:open62541.server.application` (open62541 default) |
-| `open62541-all-security`    | `urn:open62541.server.application` (open62541 default) |
+| Service                    | ApplicationUri                                          |
+| -------------------------- | ------------------------------------------------------- |
+| `open62541-nm`              | `urn:open62541.server.application` (open62541 default)  |
+| `open62541-all-security`    | `urn:open62541.server.application` (open62541 default)  |
+| `open62541-historizing`     | `urn:open62541.server.application` (open62541 default)  |
 
 Both inherit open62541's hard-coded default. Different from
 `uanetstandard-test-suite` (which uses
@@ -129,6 +135,7 @@ checks:
 ```bash
 nc -z localhost 24840 && echo "open62541-nm: OK"
 nc -z localhost 24841 && echo "open62541-all-security: OK"
+nc -z localhost 24842 && echo "open62541-historizing: OK"
 ```
 <!-- @endcode-block -->
 

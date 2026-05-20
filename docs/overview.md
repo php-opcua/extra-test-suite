@@ -39,22 +39,23 @@ main one and lets each suite move at its own cadence.
 
 ## What's inside today
 
-| Port  | Service                    | Upstream            | Purpose                                        |
-| ----- | -------------------------- | ------------------- | ---------------------------------------------- |
-| 24840 | `open62541-nm`              | open62541 v1.4.8    | NodeManagement service set, full access         |
-| 24841 | `open62541-all-security`    | open62541 v1.4.8    | Every RSA policy + Anonymous + Username/Password |
+| Port  | Service                      | Upstream            | Purpose                                              |
+| ----- | ---------------------------- | ------------------- | ---------------------------------------------------- |
+| 24840 | `open62541-nm`                | open62541 v1.4.8    | NodeManagement service set, full access              |
+| 24841 | `open62541-all-security`      | open62541 v1.4.8    | Every RSA policy + Anonymous + Username/Password     |
+| 24842 | `open62541-historizing`       | open62541 v1.4.8    | HistoryRead + HistoryUpdate on a `Double` (v1.2.0+)  |
 
-Both run from individual `Dockerfile`s under their service
-folders, both published as separate images to
+All three run from individual `Dockerfile`s under their service
+folders, all published as separate images to
 `ghcr.io/php-opcua/extra-test-suite/<service>`.
 
 ## Why these ports
 
-Ports `24840` and `24841` sit **well clear** of the `4840-4849`
-range `uanetstandard-test-suite` reserves. Future services follow
-the same rule (no overlap with `4840-4849` or between each
-other). Running both suites at once means **12 OPC UA servers**
-on the same host, no port conflicts.
+Ports `24840`, `24841`, and `24842` sit **well clear** of the
+`4840-4849` range `uanetstandard-test-suite` reserves. Future
+services follow the same rule (no overlap with `4840-4849` or
+between each other). Running both suites at once means **13 OPC UA
+servers** on the same host, no port conflicts.
 
 ## What it doesn't cover
 
@@ -81,7 +82,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: php-opcua/uanetstandard-test-suite@v1.2.0  # main: 10 servers on 4840-4849
-      - uses: php-opcua/extra-test-suite@v1.1.0          # extras: 2 servers on 24840-24841
+      - uses: php-opcua/extra-test-suite@v1.2.0          # extras: 3 servers on 24840-24842
       - run: vendor/bin/pest --group=integration
 ```
 <!-- @endcode-block -->
@@ -108,7 +109,7 @@ See [Customization · Forking and adding a server](./customization/forking-and-a
 ## Where to read next
 
 - [Installation](./getting-started/installation.md) — bring it up.
-- [Servers · Overview](./servers/overview.md) — the two services
+- [Servers · Overview](./servers/overview.md) — the three services
   in detail.
 - [NodeManagement · Overview](./nodemanagement/overview.md) —
   the main reason this suite exists.

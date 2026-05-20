@@ -33,3 +33,12 @@ services:
     ports:
       - "24841:4840"
     restart: unless-stopped
+
+  open62541-historizing:
+    image: ghcr.io/php-opcua/extra-test-suite/open62541-historizing:${TAG:-latest}
+    build:
+      context: ./open62541-historizing
+    container_name: opcua-extra-historizing
+    ports:
+      - "24842:4840"
+    restart: unless-stopped

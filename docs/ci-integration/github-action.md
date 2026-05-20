@@ -34,10 +34,11 @@ jobs:
 ```
 <!-- @endcode-block -->
 
-When the `uses:` step finishes, both ports are open:
+When the `uses:` step finishes, all three ports are open:
 
 - `opc.tcp://localhost:24840` — `open62541-nm`
 - `opc.tcp://localhost:24841` — `open62541-all-security`
+- `opc.tcp://localhost:24842` — `open62541-historizing`
 
 ## Inputs
 
@@ -47,7 +48,7 @@ When the `uses:` step finishes, both ports are open:
 | `startup-timeout` | `30`        | Seconds to wait for each service's TCP port                  |
 
 No outputs. The endpoint URLs are part of the suite's
-**versioned contract** — `24840` and `24841` are stable. Your
+**versioned contract** — `24840`, `24841`, and `24842` are stable. Your
 test code hardcodes them.
 
 ## What it does internally
@@ -100,7 +101,7 @@ jobs:
       # Main suite: 10 classic servers on 4840-4849, SKS on 4851, PubSub on UDP 14850
       - uses: php-opcua/uanetstandard-test-suite@v1.2.0
 
-      # Extras: 2 open62541 servers on 24840-24841
+      # Extras: 3 open62541 servers on 24840-24842
       - uses: php-opcua/extra-test-suite@v1.1.0
 
       - run: vendor/bin/pest --group=integration

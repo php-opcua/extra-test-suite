@@ -41,7 +41,7 @@ job needs to wait:
 
 <!-- @code-block language="bash" label="wait loop" -->
 ```bash
-for port in 24840 24841; do
+for port in 24840 24841 24842; do
   for i in $(seq 1 30); do
     nc -z localhost "$port" 2>/dev/null && break
     sleep 1
@@ -67,7 +67,7 @@ integration-tests:
     - docker compose -f docker-compose.yml -f docker-compose.ci.yml pull
     - docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
     - |
-      for port in 24840 24841; do
+      for port in 24840 24841 24842; do
         for i in $(seq 1 30); do
           nc -z localhost "$port" 2>/dev/null && break
           sleep 1
@@ -101,7 +101,7 @@ pipeline {
           docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
         '''
         sh '''
-          for port in 24840 24841; do
+          for port in 24840 24841 24842; do
             for i in $(seq 1 30); do
               nc -z localhost "$port" 2>/dev/null && break
               sleep 1
@@ -150,7 +150,7 @@ jobs:
       - run:
           name: Wait for servers
           command: |
-            for port in 24840 24841; do
+            for port in 24840 24841 24842; do
               for i in $(seq 1 30); do
                 nc -z localhost "$port" 2>/dev/null && break
                 sleep 1
@@ -229,7 +229,7 @@ docker compose -f docker-compose.yml -f docker-compose.ci.yml pull
 docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
 
 # Wait for all ports
-for port in 4840 4841 4842 4843 4844 4845 4846 4847 4848 4849 4851 24840 24841; do
+for port in 4840 4841 4842 4843 4844 4845 4846 4847 4848 4849 4851 24840 24841 24842; do
   for i in $(seq 1 60); do
     nc -z localhost "$port" 2>/dev/null && break
     sleep 1
@@ -245,7 +245,7 @@ cd /tmp/extras && docker compose -f docker-compose.yml -f docker-compose.ci.yml 
 ```
 <!-- @endcode-block -->
 
-The ports don't overlap (4840-4851 vs 24840-24841), so this
+The ports don't overlap (4840-4851 vs 24840-24842), so this
 just works.
 
 ## Where to read next

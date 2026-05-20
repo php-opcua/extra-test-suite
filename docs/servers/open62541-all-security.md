@@ -7,8 +7,8 @@ see_also:
   - { href: '../security-and-auth/trust-posture.md',       meta: '4 min' }
   - { href: '../security-and-auth/user-accounts.md',       meta: '3 min' }
 
-prev: { label: 'open62541-nm',  href: './open62541-nm.md' }
-next: { label: 'NodeManagement · Overview', href: '../nodemanagement/overview.md' }
+prev: { label: 'open62541-nm',         href: './open62541-nm.md' }
+next: { label: 'open62541-historizing', href: './open62541-historizing.md' }
 ---
 
 # `open62541-all-security`

@@ -1,6 +1,6 @@
 ---
 eyebrow: 'Docs · Getting started'
-lede:    'One docker compose command brings up both servers. Prerequisites, what to expect on first boot, image vs build modes.'
+lede:    'One docker compose command brings up all three servers. Prerequisites, what to expect on first boot, image vs build modes.'
 
 see_also:
   - { href: './quick-start.md',                     meta: '3 min' }
@@ -16,7 +16,7 @@ next: { label: 'Quick start',  href: './quick-start.md' }
 ## Prerequisites
 
 - **Docker** with Compose v2 (`docker compose ...`).
-- **Free host ports:** 24840 and 24841 (TCP).
+- **Free host ports:** 24840, 24841, and 24842 (TCP).
 - ~250 MB of disk for both images.
 
 No language toolchain on the host — everything runs in
@@ -90,13 +90,15 @@ docker compose ps
 ```
 <!-- @endcode-block -->
 
-Both `opcua-extra-nm` and `opcua-extra-all-security` should show
-`running`. Probe the TCP ports:
+All three of `opcua-extra-nm`, `opcua-extra-all-security`, and
+`opcua-extra-historizing` should show `running`. Probe the TCP
+ports:
 
 <!-- @code-block language="bash" label="terminal — TCP probe" -->
 ```bash
 nc -z localhost 24840 && echo "24840 OK"
 nc -z localhost 24841 && echo "24841 OK"
+nc -z localhost 24842 && echo "24842 OK"
 ```
 <!-- @endcode-block -->
 
@@ -140,8 +142,8 @@ A plain `docker compose down && docker compose up -d` keeps the
 existing cert; only `down -v` (or explicitly deleting the
 volume) regenerates it.
 
-`open62541-nm` runs without security and doesn't generate any
-certs.
+`open62541-nm` and `open62541-historizing` run without security
+and don't generate any certs.
 
 ## Stop
 
@@ -162,13 +164,13 @@ docker compose down -v
 
 ## Resource footprint
 
-Both servers combined:
+All three servers combined:
 
 | Resource | Idle      | Under load  |
 | -------- | --------- | ----------- |
-| RAM      | ~80 MB    | ~150 MB     |
+| RAM      | ~120 MB   | ~200 MB     |
 | CPU      | < 1%      | 1-5%        |
-| Disk     | ~120 MB   | —           |
+| Disk     | ~180 MB   | —           |
 
 Comfortable on any laptop or CI runner.
 

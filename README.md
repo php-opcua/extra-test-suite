@@ -28,8 +28,9 @@ Today it ships **two** servers — [open62541](https://github.com/open62541/open
 |---|---|---|---|
 | 24840 | `open62541-nm` | [open62541 v1.4.8](https://github.com/open62541/open62541) built with `UA_ENABLE_NODEMANAGEMENT=ON`, runtime `ci_server` | `AddNodes` / `DeleteNodes` / `AddReferences` / `DeleteReferences` over the wire, plus anonymous full-access AccessControl so the tests don't fight permissions |
 | 24841 | `open62541-all-security` | [open62541 v1.4.8](https://github.com/open62541/open62541) built with `UA_ENABLE_ENCRYPTION=OPENSSL`, custom example server | Mirror of `uanetstandard-test-suite` port 4843 (`opcua-all-security`): every RSA security policy the build supports, every security mode (`None`/`Sign`/`SignAndEncrypt`), Anonymous + Username/Password authentication. Credentials match the upstream suite (`admin`/`admin123`, `operator`/`operator123`, `viewer`/`viewer123`, `test`/`test`). Self-signed RSA-2048 server certificate generated on first boot. **Permissive test posture:** accepts any client certificate (no trust list check) and allows plain-text passwords over `SecurityPolicy#None` — mirrors `uanetstandard-test-suite` port 4845 (`opcua-auto-accept`) behaviour so test clients work without server-side pre-trust. |
+| 24842 | `open62541-historizing` | [open62541 v1.4.8](https://github.com/open62541/open62541) built with `UA_ENABLE_HISTORIZING=ON`, custom server | `HistoryInsertData` / `HistoryReplaceData` / `HistoryUpdateData` / `HistoryDeleteRawModified` / `HistoryReadRaw` against a single historizing `Double` at `ns=2;s=Historizing.Counter`. Fills the HistoryUpdate gap left by UA-.NETStandard's demo nodes. In-memory backend (1024 sample capacity), anonymous, no security. _Added in v1.2.0._ |
 
-Ports `24840`/`24841` were picked to sit **well clear** of the `4840-4849` range `uanetstandard-test-suite` reserves. Future services will follow the same rule (no overlap with 4840-4849 or between each other).
+Ports `24840`/`24841`/`24842` were picked to sit **well clear** of the `4840-4849` range `uanetstandard-test-suite` reserves. Future services will follow the same rule (no overlap with 4840-4849 or between each other).
 
 ## Fork It
 
@@ -54,7 +55,7 @@ If the single open62541 server covers your NodeManagement testing needs (as it d
 docker compose up -d
 ```
 
-That's it. The `open62541-nm` container is running on `opc.tcp://localhost:24840` with anonymous full-access AccessControl and all four NodeManagement services enabled, and `open62541-all-security` is on `opc.tcp://localhost:24841` advertising every RSA policy with anonymous and username/password authentication.
+That's it. The `open62541-nm` container is running on `opc.tcp://localhost:24840` with anonymous full-access AccessControl and all four NodeManagement services enabled, `open62541-all-security` is on `opc.tcp://localhost:24841` advertising every RSA policy with anonymous and username/password authentication, and `open62541-historizing` is on `opc.tcp://localhost:24842` with HistoryRead + HistoryUpdate enabled on `ns=2;s=Historizing.Counter`.
 
 ```bash
 # Stop everything
@@ -68,6 +69,7 @@ docker compose down
 ```
 opc.tcp://localhost:24840       # open62541 — NodeManagement
 opc.tcp://localhost:24841       # open62541 — all RSA security policies + anonymous/userpass
+opc.tcp://localhost:24842       # open62541 — HistoryRead + HistoryUpdate
 ```
 
 ## Certificates

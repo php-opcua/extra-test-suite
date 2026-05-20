@@ -1,6 +1,6 @@
 ---
 eyebrow: 'Docs · Getting started'
-lede:    'One minute from docker compose up to a connected client. Both servers, the simplest happy path.'
+lede:    'One minute from docker compose up to a connected client. All three servers, the simplest happy path.'
 
 see_also:
   - { href: './installation.md',                        meta: '3 min' }
@@ -21,7 +21,7 @@ docker compose up -d
 ```
 <!-- @endcode-block -->
 
-Both servers come up in a few seconds.
+All three servers come up in a few seconds.
 
 ## Connect to `open62541-nm` (port 24840)
 
